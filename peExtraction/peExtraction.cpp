@@ -1,31 +1,34 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include "peFileInformation.cpp"
+
 
 // initialize functions
 void showMenu();
 std::string get_input_filename();
 std::string get_file_contents(std::string const& infile);
 int userInput();
+std::string getFileNameAndOutputContents();
 
 int main()
 {
-	std::cout << "Welcome to the PE Extraction Tool" << std::endl;
-	std::cout << "Please choose from the following options" << std::endl;
-	std::string input_filename = get_input_filename();
-	std::string content = get_file_contents(input_filename);
-	std::cout << content << std::endl;
 	try
 	{
+		std::string fileContent = getFileNameAndOutputContents();
 		showMenu();
-		int choice = userInput();
+		int choice = 0;
 		while (choice != -1)
 		{
+			int choice = userInput();
 			switch (choice)
 			{
-			case 1:
+			case -1:
+				std::cout << "Exiting program..." << std::endl;
+				return 0;
+			case 1: {
 				std::cout << "You chose 1" << std::endl;
-				break;
+				break; }
 			case 2:
 				std::cout << "You chose 2" << std::endl;
 				break;
@@ -71,6 +74,7 @@ int main()
 // show menu function 
 void showMenu()
 {
+	std::cout << "Please choose from the following options" << std::endl;
 	std::cout << "=== PE File Information ===" << std::endl;
 	std::cout << "1. Point to Entry Point" << std::endl;
 	std::cout << "2. CheckSum" << std::endl;
@@ -108,8 +112,18 @@ std::string get_file_contents(std::string const& infile)
 std::string get_input_filename()
 {
 	std::string filename;
+	std::cout << "PE File Information Extraction " << std::endl;
 	std::cout << "Please enter the name of the input file." << std::endl;
 	std::cout << "Filename: ";
 	std::cin >> filename;
 	return filename;
 }
+
+std::string getFileNameAndOutputContents() 
+{
+	std::string filename = get_input_filename();
+	std::string contents = get_file_contents(filename);
+	std::cout << contents << std::endl;
+	return contents;
+}
+
