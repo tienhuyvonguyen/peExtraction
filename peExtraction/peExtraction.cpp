@@ -2,8 +2,27 @@
 #include <stdio.h>
 #include<iostream>
 #include<winnt.h>
-DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt);
 // dump and print the PE header and section table of the specified file 
+DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
+{
+	size_t i = 0;
+	PIMAGE_SECTION_HEADER pSeh;
+	if (rva == 0)
+	{
+		return (rva);
+	}
+	pSeh = psh;
+	for (i = 0; i < pnt->FileHeader.NumberOfSections; i++)
+	{
+		if (rva >= pSeh->VirtualAddress && rva < pSeh->VirtualAddress +
+			pSeh->Misc.VirtualSize)
+		{
+			break;
+		}
+		pSeh++;
+	}
+	return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
+}
 void DumpPEHeader(LPCSTR filename)
 {
 	HANDLE hFile;
@@ -16,6 +35,8 @@ void DumpPEHeader(LPCSTR filename)
 	PIMAGE_OPTIONAL_HEADER pOptionalHeader;
 	PIMAGE_SECTION_HEADER pSectionHeader;
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor;
+	PIMAGE_EXPORT_DIRECTORY pExportDirectory;
+	
 	try {
 		// open the file for reading
 		hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -79,7 +100,7 @@ void DumpPEHeader(LPCSTR filename)
 			LPSTR libname[256];
 			size_t i = 0;
 			// Walk until you reached an empty IMAGE_IMPORT_DESCRIPTOR
-			printf("Library Name   :\n");
+			printf("Import Library Name   :\n");
 			while (pImportDescriptor->Name != NULL)
 			{
 				//Get the name of each DLL
@@ -89,7 +110,6 @@ void DumpPEHeader(LPCSTR filename)
 				i++;
 
 			}
-
 		}
 		else
 		{
@@ -99,12 +119,12 @@ void DumpPEHeader(LPCSTR filename)
 		// print the file export table 
 		if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size != 0)/*if size of the table is 0 - Export Table does not exist */
 		{
-			PIMAGE_EXPORT_DIRECTORY pExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((DWORD_PTR)lpFileBase + \
+			pExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((DWORD_PTR)lpFileBase + \
 				Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, pSectionHeader, pNTHeader));
 			LPSTR libname[256];
 			size_t i = 0;
 			// Walk until you reached an empty IMAGE_IMPORT_DESCRIPTOR
-			printf("Library Name   :\n");
+			printf("Export Library Name   :\n");
 			while (pExportDirectory->Name != NULL)
 			{
 				//Get the name of each DLL
@@ -124,26 +144,7 @@ void DumpPEHeader(LPCSTR filename)
 		printf("Error: %s (%d)\r ", msg, GetLastError());
 	}
 }
-DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
-{
-	size_t i = 0;
-	PIMAGE_SECTION_HEADER pSeh;
-	if (rva == 0)
-	{
-		return (rva);
-	}
-	pSeh = psh;
-	for (i = 0; i < pnt->FileHeader.NumberOfSections; i++)
-	{
-		if (rva >= pSeh->VirtualAddress && rva < pSeh->VirtualAddress +
-			pSeh->Misc.VirtualSize)
-		{
-			break;
-		}
-		pSeh++;
-	}
-	return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
-}
+
 int main(int argc, char* argv[])
 {
 	try
