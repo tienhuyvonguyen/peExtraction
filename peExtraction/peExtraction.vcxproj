@@ -128,7 +128,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="peExtraction.cpp" />
-    <ClCompile Include="peFileInformation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
