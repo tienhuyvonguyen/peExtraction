@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include<iostream>
 #include<winnt.h>
-// dump and print the PE header and section table of the specified file 
+
 DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 {
 	size_t i = 0;
@@ -154,7 +154,6 @@ int main(int argc, char* argv[])
 			std::cout << "Usage: peExtraction.exe <filename>" << std::endl;
 			return 0;
 		}
-
 		LPCSTR fileName = argv[1];
 		std::cout << "Dumping file " << fileName << std::endl;
 		DumpPEHeader(fileName);
