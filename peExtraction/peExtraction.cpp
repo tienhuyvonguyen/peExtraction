@@ -1,55 +1,79 @@
 #include <windows.h>
 #include <stdio.h>
-//#include <objdump.h>
-//#include "exedump.h"
-//#include "extrnvar.h"
 #include<iostream>
 #include<winnt.h>
 
-void dumpFile(LPCSTR fileName) {
+// dump and print the PE header and section table of the specified file 
+void DumpPEHeader(LPCSTR filename)
+{
+	HANDLE hFile;
+	HANDLE hFileMapping;
+	LPVOID lpFileBase;
 
-	HANDLE hFile = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		printf("Error opening file %s", fileName);
-	}
-	DWORD fileSize = GetFileSize(hFile, NULL);
-	if (fileSize == INVALID_FILE_SIZE) {
-		std::cout << "Error getting file size" << std::endl;
-		return;
-	}
-	LPVOID fileBuffer = VirtualAlloc(NULL, fileSize, MEM_COMMIT, PAGE_READWRITE);
-	if (fileBuffer == NULL) {
-		std::cout << "Error allocating memory" << std::endl;
-		return;
-	}
-	DWORD bytesRead;
-	if (!ReadFile(hFile, fileBuffer, fileSize, &bytesRead, NULL)) {
-		std::cout << "Error reading file" << std::endl;
-		return;
-	}
-	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)fileBuffer;
-	if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
-		std::cout << "Invalid DOS signature" << std::endl;
-		return;
-	}
+	PIMAGE_DOS_HEADER pDosHeader;
+	PIMAGE_NT_HEADERS pNTHeader;
+	PIMAGE_FILE_HEADER pFileHeader;
+	PIMAGE_OPTIONAL_HEADER pOptionalHeader;
+	PIMAGE_SECTION_HEADER pSectionHeader;
 
-	
-	PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((DWORD)fileBuffer + dosHeader->e_lfanew);
-	if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) {
-		std::cout << "Invalid NT signature" << std::endl;
-		return;
-	}
+	try {
+		// open the file for reading
+		hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile == INVALID_HANDLE_VALUE)
+			throw "CreateFile() failed";
 
-	
-	PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
-	for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
-		std::cout << "Section " << i << ": " << sectionHeader[i].Name << std::endl;
+		// create a file mapping object
+		hFileMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+		if (hFileMapping == NULL)
+			throw "CreateFileMapping() failed";
+
+		// map a view of the file
+		lpFileBase = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
+		if (lpFileBase == NULL)
+			throw "MapViewOfFile() failed";
+
+		// get a pointer to the DOS header
+		pDosHeader = (PIMAGE_DOS_HEADER)lpFileBase;
+
+		// check the magic number
+		if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+			throw "Not a valid executable file";
+
+		// get a pointer to the NT (PE) header
+		pNTHeader = (PIMAGE_NT_HEADERS)((LPBYTE)lpFileBase + pDosHeader->e_lfanew);
+
+		// check the signature
+		if (pNTHeader->Signature != IMAGE_NT_SIGNATURE)
+			throw "Not a valid PE file";
+
+		// get pointers to the sections
+		pFileHeader = &pNTHeader->FileHeader;
+		pOptionalHeader = &pNTHeader->OptionalHeader;
+		pSectionHeader = IMAGE_FIRST_SECTION(pNTHeader);
+
+		// print the file header
+		printf("Address of entry point : %08X\n", pOptionalHeader->AddressOfEntryPoint);
+		printf("Checksum : %08X\n", pOptionalHeader->CheckSum);
+		printf("Image base from %08X to %08X\n", pOptionalHeader->ImageBase, pOptionalHeader->ImageBase + pOptionalHeader->SizeOfImage);
+		printf("Image base : %08X \n", pOptionalHeader->ImageBase);
+		printf("File alignment : %08X\n", pOptionalHeader->FileAlignment);
+		printf("Size of image : %08X\n", pOptionalHeader->SizeOfImage);
+		// print the file sections
+		printf("Section name|\tVirtual size\tVirtual address\tRaw size\tRaw address\tCharacteristics\n");
+		for (int i = 0; i < pFileHeader->NumberOfSections; i++)
+		{
+			printf("%s\t%15X\t%15X\t%15X\t%15X\t%15X\n", pSectionHeader[i].Name
+				, pSectionHeader[i].Misc.VirtualSize
+				, pSectionHeader[i].VirtualAddress
+				, pSectionHeader[i].SizeOfRawData
+				, pSectionHeader[i].PointerToRawData
+				, pSectionHeader[i].Characteristics);
+		}
 	}
-	VirtualFree(fileBuffer, 0, MEM_RELEASE);
-	CloseHandle(hFile);
+	catch (LPCSTR msg) {
+		printf("Error: %s (%d)\r ", msg, GetLastError());
+	}
 }
-
-
 int main(int argc, char* argv[])
 {
 	try
@@ -62,14 +86,11 @@ int main(int argc, char* argv[])
 
 		LPCSTR fileName = argv[1];
 		std::cout << "Dumping file " << fileName << std::endl;
-		dumpFile(fileName);
+		DumpPEHeader(fileName);
 	}
-	catch (...)
-	{
-		std::cout << "Error" << std::endl;
+	catch (LPCSTR msg) {
+		printf("Error: %s (%d)\r ", msg, GetLastError());
 	}
-	std::cout << "Thank you for using the PE Extraction Tool" << std::endl
-		<< "Press any key to exit" << std::endl;
 	return 0;
 }
 
