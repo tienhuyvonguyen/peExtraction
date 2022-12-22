@@ -26,7 +26,7 @@ DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 }
 
 // dump PE file headers and sections
-// flow 
+// flow open & read file -> create mapping object -> map view of file -> get pointers to each criterias -> dump headers and sections
 void DumpPEHeader(LPCSTR filename)
 {
 	HANDLE hFile;
@@ -39,10 +39,7 @@ void DumpPEHeader(LPCSTR filename)
 	PIMAGE_SECTION_HEADER pSectionHeader;
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor;
 	PIMAGE_EXPORT_DIRECTORY pExportDirectory;
-	
 	try {
-		
-		
 		// open the file for reading
 		hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE)
