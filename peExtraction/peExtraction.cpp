@@ -85,8 +85,10 @@ void DumpPEHeader(LPCSTR filename)
 		printf("Image base : %08X \n", pOptionalHeader->ImageBase);
 		printf("File alignment : %08X\n", pOptionalHeader->FileAlignment);
 		printf("Size of image : %08X\n", pOptionalHeader->SizeOfImage);
+		printf("\n");
 		
 		// print the file sections
+		printf("=== Section Table ===\n");
 		printf("Section name|\tVirtual size|\tVirtual address|\tRaw size|\tRaw address|\tCharacteristics|\n");
 		for (int i = 0; i < pFileHeader->NumberOfSections; i++)
 		{
@@ -97,6 +99,7 @@ void DumpPEHeader(LPCSTR filename)
 				, pSectionHeader[i].PointerToRawData
 				, pSectionHeader[i].Characteristics);
 		}
+		printf("\n");
 		
 		// print the file import table 
 		if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size != 0)/*if size of the table is 0 - Import Table does not exist */
@@ -121,6 +124,7 @@ void DumpPEHeader(LPCSTR filename)
 		{
 			printf("No Import Table!\n");
 		}
+		printf("\n");
 		
 		// print the file export table 
 		if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size != 0)/*if size of the table is 0 - Export Table does not exist */
