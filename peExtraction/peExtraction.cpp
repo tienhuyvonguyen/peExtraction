@@ -24,12 +24,14 @@ DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 	}
 	return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
 }
+
+// dump PE file headers and sections
+// flow 
 void DumpPEHeader(LPCSTR filename)
 {
 	HANDLE hFile;
 	HANDLE hFileMapping;
 	LPVOID lpFileBase;
-
 	PIMAGE_DOS_HEADER pDosHeader;
 	PIMAGE_NT_HEADERS pNTHeader;
 	PIMAGE_FILE_HEADER pFileHeader;
