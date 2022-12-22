@@ -41,7 +41,6 @@ void DumpPEHeader(LPCSTR filename)
 	PIMAGE_EXPORT_DIRECTORY pExportDirectory;
 	
 	try {
-		// check file is packed or not 
 		
 		
 		// open the file for reading
@@ -92,12 +91,13 @@ void DumpPEHeader(LPCSTR filename)
 		printf("Section name|\tVirtual size|\tVirtual address|\tRaw size|\tRaw address|\tCharacteristics|\n");
 		for (int i = 0; i < pFileHeader->NumberOfSections; i++)
 		{
-			printf("%s\t%15X\t%15X\t%22X\t%19X\t%15X\n", pSectionHeader[i].Name
-				, pSectionHeader[i].Misc.VirtualSize
-				, pSectionHeader[i].VirtualAddress
-				, pSectionHeader[i].SizeOfRawData
-				, pSectionHeader[i].PointerToRawData
-				, pSectionHeader[i].Characteristics);
+
+				printf("%s\t%15X\t%15X\t%22X\t%19X\t%15X\n", pSectionHeader[i].Name
+					, pSectionHeader[i].Misc.VirtualSize
+					, pSectionHeader[i].VirtualAddress
+					, pSectionHeader[i].SizeOfRawData
+					, pSectionHeader[i].PointerToRawData
+					, pSectionHeader[i].Characteristics);
 		}
 		printf("\n");
 		
