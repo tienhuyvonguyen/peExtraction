@@ -41,11 +41,14 @@ void DumpPEHeader(LPCSTR filename)
 	PIMAGE_EXPORT_DIRECTORY pExportDirectory;
 	
 	try {
+		// check file is packed or not 
+		
+		
 		// open the file for reading
 		hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE)
 			throw "CreateFile() failed";
-
+		
 		// create a file mapping object
 		hFileMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
 		if (hFileMapping == NULL)
@@ -84,10 +87,10 @@ void DumpPEHeader(LPCSTR filename)
 		printf("Size of image : %08X\n", pOptionalHeader->SizeOfImage);
 		
 		// print the file sections
-		printf("Section name|\tVirtual size\tVirtual address\tRaw size\tRaw address\tCharacteristics\n");
+		printf("Section name|\tVirtual size|\tVirtual address|\tRaw size|\tRaw address|\tCharacteristics|\n");
 		for (int i = 0; i < pFileHeader->NumberOfSections; i++)
 		{
-			printf("%s\t%15X\t%15X\t%15X\t%15X\t%15X\n", pSectionHeader[i].Name
+			printf("%s\t%15X\t%15X\t%22X\t%19X\t%15X\n", pSectionHeader[i].Name
 				, pSectionHeader[i].Misc.VirtualSize
 				, pSectionHeader[i].VirtualAddress
 				, pSectionHeader[i].SizeOfRawData
@@ -103,12 +106,12 @@ void DumpPEHeader(LPCSTR filename)
 			LPSTR libname[256];
 			size_t i = 0;
 			// Walk until you reached an empty PIMAGE_EXPORT_DIRECTORY
-			printf("Import Library Name   :\n");
+			printf("=== Import Library Name ===\n");
 			while (pImportDescriptor->Name != NULL)
 			{
 				//Get the name of each DLL
 				libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pImportDescriptor->Name, pSectionHeader, pNTHeader));
-				printf("%s\n", libname[i]);
+				printf("\t%s\n", libname[i]);
 				pImportDescriptor++; //advance to next PIMAGE_EXPORT_DIRECTORY
 				i++;
 
@@ -127,12 +130,12 @@ void DumpPEHeader(LPCSTR filename)
 			LPSTR libname[256];
 			size_t i = 0;
 			// Walk until you reached an empty IMAGE_IMPORT_DESCRIPTOR
-			printf("Export Library Name   :\n");
+			printf("=== Export Library Name ===\n");
 			while (pExportDirectory->Name != NULL)
 			{
 				//Get the name of each DLL
 				libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pExportDirectory->Name, pSectionHeader, pNTHeader));
-				printf("%s\n", libname[i]);
+				printf("\t%s\n", libname[i]);
 				pExportDirectory++; //advance to next IMAGE_IMPORT_DESCRIPTOR
 				i++;
 
