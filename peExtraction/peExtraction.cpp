@@ -3,6 +3,7 @@
 #include<iostream>
 #include<winnt.h>
 
+// return rva of section
 DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 {
 	size_t i = 0;
@@ -99,14 +100,14 @@ void DumpPEHeader(LPCSTR filename)
 				Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress, pSectionHeader, pNTHeader));
 			LPSTR libname[256];
 			size_t i = 0;
-			// Walk until you reached an empty IMAGE_IMPORT_DESCRIPTOR
+			// Walk until you reached an empty PIMAGE_EXPORT_DIRECTORY
 			printf("Import Library Name   :\n");
 			while (pImportDescriptor->Name != NULL)
 			{
 				//Get the name of each DLL
 				libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pImportDescriptor->Name, pSectionHeader, pNTHeader));
 				printf("%s\n", libname[i]);
-				pImportDescriptor++; //advance to next IMAGE_IMPORT_DESCRIPTOR
+				pImportDescriptor++; //advance to next PIMAGE_EXPORT_DIRECTORY
 				i++;
 
 			}
@@ -155,7 +156,7 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		LPCSTR fileName = argv[1];
-		std::cout << "Dumping file " << fileName << std::endl;
+		std::cout << "Dump of file " << fileName << std::endl;
 		DumpPEHeader(fileName);
 	}
 	catch (LPCSTR msg) {
