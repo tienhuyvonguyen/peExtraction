@@ -162,6 +162,7 @@ bool DumpPEHeader(LPCSTR filename)
 		pExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((DWORD_PTR)lpFileBase + \
 			Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, pSectionHeader, pNTHeader));
 		printExportTable(pExportDirectory, pSectionHeader, pNTHeader, pNTHeader, pOptionalHeader, lpFileBase);
+		return true;
 	}
 	catch (LPCSTR msg) {
 		printf("Error: %s\n", msg);
