@@ -1,5 +1,5 @@
 # peExtraction
-Best using Visual Studio to compile and run.
+Tested with notepad.exe.
 
 - [x]  - PointerToEntryPoint
 - [x]  - CheckSum
