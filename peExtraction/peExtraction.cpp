@@ -25,9 +25,82 @@ DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 	return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
 }
 
+void printHeaders(PIMAGE_OPTIONAL_HEADER pOptionalHeader) {
+	printf("Address of entry point : %08X\n", pOptionalHeader->AddressOfEntryPoint);
+	printf("Checksum : %08X\n", pOptionalHeader->CheckSum);
+	printf("Image base from %08X to %08X\n", pOptionalHeader->ImageBase, pOptionalHeader->ImageBase + pOptionalHeader->SizeOfImage);
+	printf("Image base : %08X \n", pOptionalHeader->ImageBase);
+	printf("File alignment : %08X\n", pOptionalHeader->FileAlignment);
+	printf("Size of image : %08X\n", pOptionalHeader->SizeOfImage);
+	printf("\n");
+}
+
+void printSectionHeaders(PIMAGE_SECTION_HEADER pSectionHeader, PIMAGE_FILE_HEADER pFileHeader) {
+	printf("=== Section Table ===\n");
+	printf("Section name|\tVirtual size|\tVirtual address|\tRaw size|\tRaw address|\tCharacteristics|\n");
+	for (int i = 0; i < pFileHeader->NumberOfSections; i++)
+	{
+
+		printf("%s\t%15X\t%15X\t%22X\t%19X\t%15X\n", pSectionHeader[i].Name
+			, pSectionHeader[i].Misc.VirtualSize
+			, pSectionHeader[i].VirtualAddress
+			, pSectionHeader[i].SizeOfRawData
+			, pSectionHeader[i].PointerToRawData
+			, pSectionHeader[i].Characteristics);
+	}
+	printf("\n");
+}
+
+void printImportTable(PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor, PIMAGE_SECTION_HEADER pSectionHeader, PIMAGE_NT_HEADERS pNtHeader, PIMAGE_NT_HEADERS pNTHeader, PIMAGE_OPTIONAL_HEADER pOptionalHeader, LPVOID lpFileBase) {
+	if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size != 0)/*if size of the table is 0 - Import Table does not exist */
+	{
+		LPSTR libname[256]{};
+		size_t i = 0;
+		// Walk until you reached an empty PIMAGE_EXPORT_DIRECTORY
+		printf("=== Import Library Name ===\n");
+		while (pImportDescriptor->Name != NULL)
+		{
+			//Get the name of each DLL
+			libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pImportDescriptor->Name, pSectionHeader, pNTHeader));
+			printf("\t%s\n", libname[i]);
+			pImportDescriptor++; //advance to next PIMAGE_EXPORT_DIRECTORY
+			i++;
+
+		}
+	}
+	else
+	{
+		printf("No Import Table!\n");
+	}
+	printf("\n");
+}
+
+void printExportTable(PIMAGE_EXPORT_DIRECTORY pExportDirectory, PIMAGE_SECTION_HEADER pSectionHeader, PIMAGE_NT_HEADERS pNtHeader, PIMAGE_NT_HEADERS pNTHeader, PIMAGE_OPTIONAL_HEADER pOptionalHeader, LPVOID lpFileBase) {
+	if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size != 0)/*if size of the table is 0 - Export Table does not exist */
+	{
+		LPSTR libname[256]{};
+		size_t i = 0;
+		// Walk until you reached an empty IMAGE_IMPORT_DESCRIPTOR
+		printf("=== Export Library Name ===\n");
+		while (pExportDirectory->Name != NULL)
+		{
+			//Get the name of each DLL
+			libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pExportDirectory->Name, pSectionHeader, pNTHeader));
+			printf("\t%s\n", libname[i]);
+			pExportDirectory++; //advance to next IMAGE_IMPORT_DESCRIPTOR
+			i++;
+
+		}
+	}
+	else
+	{
+		printf("No Export Table!\n");
+	}
+}
+
 // dump PE file headers and sections
 // flow open & read file -> create mapping object -> map view of file -> get pointers to each criterias -> dump headers and sections
-void DumpPEHeader(LPCSTR filename)
+bool DumpPEHeader(LPCSTR filename)
 {
 	HANDLE hFile;
 	HANDLE hFileMapping;
@@ -75,80 +148,24 @@ void DumpPEHeader(LPCSTR filename)
 		pSectionHeader = IMAGE_FIRST_SECTION(pNTHeader);
 
 		// print the file header
-		printf("Address of entry point : %08X\n", pOptionalHeader->AddressOfEntryPoint);
-		printf("Checksum : %08X\n", pOptionalHeader->CheckSum);
-		printf("Image base from %08X to %08X\n", pOptionalHeader->ImageBase, pOptionalHeader->ImageBase + pOptionalHeader->SizeOfImage);
-		printf("Image base : %08X \n", pOptionalHeader->ImageBase);
-		printf("File alignment : %08X\n", pOptionalHeader->FileAlignment);
-		printf("Size of image : %08X\n", pOptionalHeader->SizeOfImage);
-		printf("\n");
+		printHeaders(pOptionalHeader);
 		
 		// print the file sections
-		printf("=== Section Table ===\n");
-		printf("Section name|\tVirtual size|\tVirtual address|\tRaw size|\tRaw address|\tCharacteristics|\n");
-		for (int i = 0; i < pFileHeader->NumberOfSections; i++)
-		{
-
-				printf("%s\t%15X\t%15X\t%22X\t%19X\t%15X\n", pSectionHeader[i].Name
-					, pSectionHeader[i].Misc.VirtualSize
-					, pSectionHeader[i].VirtualAddress
-					, pSectionHeader[i].SizeOfRawData
-					, pSectionHeader[i].PointerToRawData
-					, pSectionHeader[i].Characteristics);
-		}
-		printf("\n");
+		printSectionHeaders(pSectionHeader, pFileHeader);
 		
-		// print the file import table 
-		if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size != 0)/*if size of the table is 0 - Import Table does not exist */
-		{
-			pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)((DWORD_PTR)lpFileBase + \
-				Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress, pSectionHeader, pNTHeader));
-			LPSTR libname[256];
-			size_t i = 0;
-			// Walk until you reached an empty PIMAGE_EXPORT_DIRECTORY
-			printf("=== Import Library Name ===\n");
-			while (pImportDescriptor->Name != NULL)
-			{
-				//Get the name of each DLL
-				libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pImportDescriptor->Name, pSectionHeader, pNTHeader));
-				printf("\t%s\n", libname[i]);
-				pImportDescriptor++; //advance to next PIMAGE_EXPORT_DIRECTORY
-				i++;
-
-			}
-		}
-		else
-		{
-			printf("No Import Table!\n");
-		}
-		printf("\n");
+		// print the file import table
+		pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)((DWORD_PTR)lpFileBase + \
+			Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress, pSectionHeader, pNTHeader));
+		printImportTable(pImportDescriptor, pSectionHeader, pNTHeader, pNTHeader, pOptionalHeader, lpFileBase);
 		
-		// print the file export table 
-		if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size != 0)/*if size of the table is 0 - Export Table does not exist */
-		{
-			pExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((DWORD_PTR)lpFileBase + \
-				Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, pSectionHeader, pNTHeader));
-			LPSTR libname[256];
-			size_t i = 0;
-			// Walk until you reached an empty IMAGE_IMPORT_DESCRIPTOR
-			printf("=== Export Library Name ===\n");
-			while (pExportDirectory->Name != NULL)
-			{
-				//Get the name of each DLL
-				libname[i] = (PCHAR)((DWORD_PTR)lpFileBase + Rva2Offset(pExportDirectory->Name, pSectionHeader, pNTHeader));
-				printf("\t%s\n", libname[i]);
-				pExportDirectory++; //advance to next IMAGE_IMPORT_DESCRIPTOR
-				i++;
-
-			}
-		}
-		else
-		{
-			printf("No Export Table!\n");
-		}
+		// print the file export table
+		pExportDirectory = (PIMAGE_EXPORT_DIRECTORY)((DWORD_PTR)lpFileBase + \
+			Rva2Offset(pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, pSectionHeader, pNTHeader));
+		printExportTable(pExportDirectory, pSectionHeader, pNTHeader, pNTHeader, pOptionalHeader, lpFileBase);
 	}
 	catch (LPCSTR msg) {
-		printf("Error: %s (%d)\r ", msg, GetLastError());
+		printf("Error: %s\n", msg);
+		return false;
 	}
 }
 
