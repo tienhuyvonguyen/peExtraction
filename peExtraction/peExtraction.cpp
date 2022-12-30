@@ -180,6 +180,7 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		LPCSTR fileName = argv[1];
+		//LPCSTR fileName = "C:\\Windows\\notepad.exe";
 		std::cout << "Dump of file " << fileName << std::endl;
 		DumpPEHeader(fileName);
 	}
@@ -188,4 +189,3 @@ int main(int argc, char* argv[])
 	}
 	return 0;
 }
-
