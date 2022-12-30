@@ -16,3 +16,10 @@ Information about all sections of the file:
 - [x]  - VirtualAddress
 - [x]  - VirtualSize
 - imports and exports
+
+USAGE: 
+- With source: 
+  - Run compile.bat 
+  - Use peExtraction.exe <PE file>
+- With executable:
+  - Run peExtraction.exe <PE file>
